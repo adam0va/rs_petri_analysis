@@ -1,3 +1,6 @@
+#ifndef PETRI_NET_H
+#define PETRI_NET_H
+
 #include <vector>
 #include <string>
 
@@ -51,9 +54,12 @@ public:
 	int addArc(const char*, const char*, int);
 	int addVertex(char*);
 	void addPlacesFromJSONArray();
+	void getDescritpionFromFile(char *filename);
 	void printPetriNet();
 };
 
 std::string convertToString(char* a, int size);
 
 std::string makeString(const char*);
+
+#endif

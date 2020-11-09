@@ -1,0 +1,14 @@
+{
+	"Servers" : ["s1", "s2", "s3"],
+	"Databases" : ["db1", "db2"],
+	"Сonnections" : [
+		{"From" : "s1",
+		"To" : "s2"},
+		{"From" : "s1",
+		"To" : "db1"},
+		{"From" : "s2",
+		"To" : "db2"},
+		{"From" : "s1",
+		"To" : "s3"}
+	]
+}
