@@ -7,6 +7,7 @@
 #include <vector>
 #include <cstring>
 #include "distributed_system.hpp"
+#include <graphviz/gvc.h>
 
 using namespace rapidjson;
 
@@ -92,6 +93,16 @@ DataBase* DistributedSystem::findDbByName(std::string name) {
 	return NULL;
 }
 
+void DistributedSystem::parseName(std::string name) {
+	for (int i = 0; i < name.length(); i++) {
+		if (name[i] != '.') 
+			this->name.push_back(name[i]);
+		else 
+			return;
+	}
+	return;
+}
+
 void DistributedSystem::getDescritpionFromFile(char *filename) {
 	std::string currentLine, buffer;
 	std::ifstream fin(filename, std::ios_base::in); 
@@ -160,10 +171,14 @@ void DistributedSystem::getDescritpionFromFile(char *filename) {
 		}
 		
 	}
-    
+
+    this->parseName(std::string(filename));
+    this->makeDotFile();
+    this->visualize();
 }
 
 void DistributedSystem::printDistributedSystem() {
+	printf("Printing distributed system %s...\n", this->name.c_str());
 	printf("Databases:\n");
 	for (int i = 0; i < this->dataBases.size(); i++) {
 		this->dataBases[i]->printDb();
@@ -172,6 +187,52 @@ void DistributedSystem::printDistributedSystem() {
 	for (int i = 0; i < this->servers.size(); i++) {
 		this->servers[i]->printServer();
 	}
+}
+
+void DistributedSystem::makeDotFile() {
+	this->dotFileName = this->name + ".dot";
+	std::string content = "digraph distributed_system {\nnode [shape=box];\n";
+
+	for (int i = 0; i < this->servers.size(); i++) {
+		content += "\"" + this->servers[i]->getName() +"\"\n";
+		for (int j = 0; j < this->servers[i]->getServerConnections().size(); j++) {
+			content += "\"";
+			content += this->servers[i]->getName();
+			content += "\" -> \"";
+			content += this->servers[i]->getServerConnections()[j]->getName();
+			content += "\"\n";
+		}
+		for (int j = 0; j < this->servers[i]->getDbConnections().size(); j++) {
+			content += "\"";
+			content += this->servers[i]->getName();
+			content += "\" -> \"";
+			content += this->servers[i]->getDbConnections()[j]->getName();
+			content += "\"\n";
+		}
+	}
+	for (int i = 0; i < this->dataBases.size(); i++) {
+		content += "\"";
+		content += this->dataBases[i]->getName() +"\"\n";
+	}
+	content.push_back('}');
+
+	std::ofstream out(this->dotFileName.c_str());
+    out << content;
+    out.close();
+}
+
+bool DistributedSystem::visualize(){
+    GVC_t *gvc;
+    Agraph_t *g;
+    FILE *fp;
+    gvc = gvContext();
+    fp = fopen(this->dotFileName.c_str(), "r");
+    g = agread(fp, 0);
+    gvLayout(gvc, g, "dot");
+    gvRender(gvc, g, "png", fopen((this->name+".png").c_str(), "w"));
+    gvFreeLayout(gvc, g);
+    agclose(g);
+    return (gvFreeContext(gvc));
 }
 
 

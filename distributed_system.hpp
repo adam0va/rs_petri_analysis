@@ -27,15 +27,23 @@ public:
 };
 
 class DistributedSystem {
+	std::string name;
+	std::string dotFileName;
 	std::vector<Server*> servers;
 	std::vector<DataBase*> dataBases;
 public:
 	void getDescritpionFromFile(char *filename);
+	void parseName(std::string name);
+
 	void addServer(std::string name);
 	void addDataBase(std::string name);
+
 	Server* findServerByName(std::string name);
 	DataBase* findDbByName(std::string name);
+
 	void printDistributedSystem();
+	void makeDotFile();
+	bool visualize();
 };
 
 
