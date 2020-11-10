@@ -222,7 +222,7 @@ void DistributedSystem::makeDotFile() {
 }
 
 bool DistributedSystem::visualize(){
-    GVC_t *gvc;
+    /*GVC_t *gvc;
     Agraph_t *g;
     FILE *fp;
     gvc = gvContext();
@@ -232,7 +232,7 @@ bool DistributedSystem::visualize(){
     gvRender(gvc, g, "png", fopen((this->name+".png").c_str(), "w"));
     gvFreeLayout(gvc, g);
     agclose(g);
-    return (gvFreeContext(gvc));
+    return (gvFreeContext(gvc));*/
 }
 
 

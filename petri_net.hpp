@@ -29,7 +29,7 @@ public:
 };
 
 class Arc {
-	Vertex from, to;
+	Vertex *from, *to;
 	int mark;
 public:
 	void printArc();
@@ -37,25 +37,32 @@ public:
 };
 
 class PetriNet {
-	std::vector<Place> places;
-	std::vector<Transition> transitions;
-	std::vector<Arc> arcs;
+	std::vector<Place*> places;
+	std::vector<Transition*> transitions;
+	std::vector<Arc*> arcs;
+	std::string dotFileName;
+	std::string name;
 public:
 	PetriNet();
-	std::vector<Place> getPlaces();
-	std::vector<Transition> getTransitions();
-	std::vector<Arc> getArcs();
-	int addPlace(char*);
-	int addPlace(const char*);
-	int addPlace(char*, int);
-	int addPlace(const char*, int);
-	int addTransition(char*);
-	int addArc(char*, char*, int);
-	int addArc(const char*, const char*, int);
+	std::vector<Place*> getPlaces();
+	std::vector<Transition*> getTransitions();
+	std::vector<Arc*> getArcs();
+
+	int addPlace(std::string, int);
+	int addTransition(std::string);
+	int addArc(Vertex *from, Vertex *to, int mark);
 	int addVertex(char*);
+
 	void addPlacesFromJSONArray();
+
+	Place *findPlaceByName(std::string name);
+	Transition *findTransitionByName(std::string name);
+
 	void getDescritpionFromFile(char *filename);
+	void parseName(std::string name);
 	void printPetriNet();
+	void makeDotFile();
+	bool visualize();
 };
 
 std::string convertToString(char* a, int size);
