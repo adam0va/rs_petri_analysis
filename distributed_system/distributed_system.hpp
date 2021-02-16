@@ -32,7 +32,7 @@ class DistributedSystem {
 	std::vector<Server*> servers;
 	std::vector<DataBase*> dataBases;
 public:
-	void getDescritpionFromFile(char *filename);
+	void getDescritpionFromFile(const char *filename);
 	void parseName(std::string name);
 
 	void addServer(std::string name);

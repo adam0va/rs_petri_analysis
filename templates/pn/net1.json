@@ -9,7 +9,8 @@
     "Arcs" : [ 
     	{ 
     		"From" : "t1",
-    		"To" : "p1"
+    		"To" : "p1",
+			"Mark" : 5
     	},
     	{ 
     		"From" : "p1",

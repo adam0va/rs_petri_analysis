@@ -4,6 +4,8 @@
 	"Сonnections" : [
 		{"From" : "s1",
 		"To" : "s2"},
+		{"From" : "s2",
+		"To" : "s1"},
 		{"From" : "s1",
 		"To" : "db1"},
 		{"From" : "s2",

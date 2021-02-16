@@ -1,5 +1,5 @@
-#include "rapidjson/document.h"     // rapidjson's DOM-style API
-#include "rapidjson/prettywriter.h" // for stringify JSON
+#include "../rapidjson/document.h"     // rapidjson's DOM-style API
+#include "../rapidjson/prettywriter.h" // for stringify JSON
 #include <cstdio>
 #include <string>
 #include <fstream>
@@ -103,7 +103,7 @@ void DistributedSystem::parseName(std::string name) {
 	return;
 }
 
-void DistributedSystem::getDescritpionFromFile(char *filename) {
+void DistributedSystem::getDescritpionFromFile(const char *filename) {
 	std::string currentLine, buffer;
 	std::ifstream fin(filename, std::ios_base::in); 
 	if (!fin.is_open()) {
