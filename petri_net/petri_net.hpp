@@ -38,6 +38,7 @@ public:
 class Arc {
 	Vertex *from, *to;
 	int mark;
+
 public:
 	void printArc();
 	friend class PetriNet;
@@ -47,6 +48,7 @@ class PetriNet {
 	std::vector<Place*> places;
 	std::vector<Transition*> transitions;
 	std::vector<Arc*> arcs;
+	std::vector<PetriNet*> chips;
 
 	std::string dotFileName;
 	std::string name;
@@ -66,7 +68,6 @@ public:
     Place* addNextPlace();
 	Transition* addTransition(std::string);
     Transition* addNextTransition();
-    //int addArc(Vertex *&from, Vertex *&to, int mark);
 	int addArc(Place *&from, Transition *&to, int mark);
     int addArc(Transition *&from, Place *&to, int mark);
 
@@ -79,8 +80,8 @@ public:
     void getDescritpionFromFile(const char *filename);
 	void parseName(std::string name);
 	void printPetriNet();
-	void makeDotFile();
-	bool visualize();
+	void makeDotFile(std::string fn = "");
+	bool visualize(std::string dotfilePath, std::string outputPath);
 
 	void seriesJoin(PetriNet*);
     void parallelJoin(PetriNet*);
@@ -91,6 +92,10 @@ public:
 
     void findExits();
     void findEntrances();
+};
+
+class NestedPetriNet : public PetriNet {
+
 };
 
 #endif

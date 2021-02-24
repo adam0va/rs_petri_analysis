@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include "../petri_net/petri_net.hpp"
 
 class DataBase {
 	std::string name;
@@ -19,10 +20,13 @@ class Server {
 public:
 	Server(std::string name);
 	std::string getName();
+
 	std::vector<Server*> getServerConnections();
 	std::vector<DataBase*> getDbConnections();
+
 	void addConnection(Server *server);
 	void addConnection(DataBase *db);
+
 	void printServer();
 };
 
@@ -31,6 +35,7 @@ class DistributedSystem {
 	std::string dotFileName;
 	std::vector<Server*> servers;
 	std::vector<DataBase*> dataBases;
+    PetriNet* petriNetRepresentation;
 public:
 	void getDescritpionFromFile(const char *filename);
 	void parseName(std::string name);
@@ -44,6 +49,9 @@ public:
 	void printDistributedSystem();
 	void makeDotFile();
 	bool visualize();
+	PetriNet *getPnDescription(Server*);
+    void makePnRepresentation();
+
 };
 
 

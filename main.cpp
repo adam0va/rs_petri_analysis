@@ -3,12 +3,15 @@
 
 int main() {
 	DistributedSystem *ds = new DistributedSystem();
+	printf("hello\n");
 	ds->getDescritpionFromFile("templates/ds/ds1.json");
+    printf("hello\n");
+	ds->makePnRepresentation();
 	ds->printDistributedSystem();
 
-	PetriNet *pn = new PetriNet();
-	pn->getDescritpionFromFile("templates/pn/net1.json");
-	pn->makeDotFile();
+	/*PetriNet *pn = new PetriNet();
+	pn->getDescritpionFromFile("templates/pn/simple_server.json");
+	pn->makeDotFile();*/
 
 	return 0;
 }

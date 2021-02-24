@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <string>
 #include <fstream>
+#include <graphviz/gvc.h>
 
 using namespace rapidjson;
 
@@ -179,8 +180,8 @@ Transition* PetriNet::findTransitionByName(std::string name) {
 	return NULL;
 }
 
-void PetriNet::makeDotFile() {
-	this->dotFileName = this->name + ".dot";
+void PetriNet::makeDotFile(std::string fn) {
+    this->dotFileName = fn == " " ? this->name + ".dot" : fn;
     std::ofstream out(this->dotFileName.c_str());
 	out << "digraph distributed_system {\nlayout=neato\nnode [shape=circle];  ";
 	for (int i = 0; i < places.size(); i++) {
@@ -208,8 +209,19 @@ void PetriNet::makeDotFile() {
     out.close();
 }
 
-bool PetriNet::visualize() {
-
+bool PetriNet::visualize(std::string dotfilePath, std::string outputPath) {
+    /*
+    GVC_t *gvc;
+    Agraph_t *g;
+    FILE *fp;
+    gvc = gvContext();
+    fp = fopen(dotfilePath.c_str(), "r");
+    g = agread(fp, 0);
+    gvLayout(gvc, g, "dot");
+    gvRender(gvc, g, "png", fopen(outputPath.c_str(), "w"));
+    gvFreeLayout(gvc, g);
+    agclose(g);
+    return (gvFreeContext(gvc));*/
 }
 
 void PetriNet::parseName(std::string name) {
@@ -309,7 +321,7 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
     assert(document["Arcs"].IsArray());
 	for (int i = 0; i < document["Arcs"].Size(); i++) {
 		//char from[100], to[100];
-		int mark = 0;
+		int mark = 1;
 		assert(document["Arcs"][i].IsObject());
 		
 		assert(document["Arcs"][i]["From"].IsString());

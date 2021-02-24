@@ -13,7 +13,6 @@ using namespace rapidjson;
 
 Server::Server(std::string name) {
 	this->name = name;
-	return;
 }
 
 std::string Server::getName() {
@@ -30,12 +29,10 @@ std::vector<DataBase*> Server::getDbConnections() {
 
 void Server::addConnection(Server *server) {
 	this->serverConnections.push_back(server);
-	return;
 }
 
 void Server::addConnection(DataBase *db) {
 	this->dbConnections.push_back(db);
-	return;
 }
 
 void Server::printServer() {
@@ -49,12 +46,10 @@ void Server::printServer() {
 		printf("%s, ", this->dbConnections[i]->getName().c_str());
 	}
 	printf("\n");
-	return;
 }
 
 DataBase::DataBase(std::string name) {
 	this->name = name;
-	return;
 }
 
 void DataBase::printDb() {
@@ -222,7 +217,8 @@ void DistributedSystem::makeDotFile() {
 }
 
 bool DistributedSystem::visualize(){
-    /*GVC_t *gvc;
+    /*
+    GVC_t *gvc;
     Agraph_t *g;
     FILE *fp;
     gvc = gvContext();
@@ -234,6 +230,33 @@ bool DistributedSystem::visualize(){
     agclose(g);
     return (gvFreeContext(gvc));*/
 }
+
+PetriNet* DistributedSystem::getPnDescription(Server *s) {
+    PetriNet *pn = new PetriNet();
+    if (s->getServerConnections().empty() && s->getDbConnections().empty()) {
+        pn->getDescritpionFromFile("templates/pn/simple_server.json");
+        return pn;
+    }
+    if (s->getServerConnections().empty() && !s->getDbConnections().empty()) {
+        pn->getDescritpionFromFile("templates/pn/server_with_db.json");
+        return pn;
+    } else {
+        pn->getDescritpionFromFile("templates/pn/server_with_connections.json");
+        return pn;
+    }
+}
+
+void DistributedSystem::makePnRepresentation() {
+    std::vector<PetriNet*> components;
+    PetriNet *firstPn = getPnDescription(this->servers[0]);
+    for (int i = 1; i < this->servers.size(); i++) {
+        components.push_back(getPnDescription(this->servers[i]));
+    }
+    firstPn->parallelJoin(components);
+    this->petriNetRepresentation = firstPn;
+    this->petriNetRepresentation->makeDotFile("templates/pn/DS.dot");
+}
+
 
 
 
