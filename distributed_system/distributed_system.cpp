@@ -72,13 +72,21 @@ void DistributedSystem::addDataBase(std::string name) {
 	return;
 }
 
+PetriNet* DistributedSystem::getPnRepresentation() {
+    return this->petriNetRepresentation;
+}
+
+std::string DistributedSystem::getDotFileName() {
+    return this->dotFileName;
+}
+
 Server* DistributedSystem::findServerByName(std::string name) {
 	for (int i = 0; i < this->servers.size(); i++) {
 		if (strcmp(name.c_str(), this->servers[i]->getName().c_str()) == 0)
 			return this->servers[i];
 	}
 	return NULL;
-}
+}   
 
 DataBase* DistributedSystem::findDbByName(std::string name) {
 	for (int i = 0; i < this->dataBases.size(); i++) {
@@ -169,7 +177,7 @@ void DistributedSystem::getDescritpionFromFile(const char *filename) {
 
     this->parseName(std::string(filename));
     this->makeDotFile();
-    this->visualize();
+
 }
 
 void DistributedSystem::printDistributedSystem() {
@@ -216,7 +224,9 @@ void DistributedSystem::makeDotFile() {
     out.close();
 }
 
-bool DistributedSystem::visualize(){
+bool DistributedSystem::visualize(std::string dotfilePath, std::string outputPath){
+    std::string command = "dot -Tpdf " + dotfilePath + " -o " + outputPath;
+    system(command.c_str());
     /*
     GVC_t *gvc;
     Agraph_t *g;
@@ -255,6 +265,10 @@ void DistributedSystem::makePnRepresentation() {
     firstPn->parallelJoin(components);
     this->petriNetRepresentation = firstPn;
     this->petriNetRepresentation->makeDotFile("templates/pn/DS.dot");
+}
+
+void DistributedSystem::visualizePn() {
+    this->petriNetRepresentation->visualize();
 }
 
 

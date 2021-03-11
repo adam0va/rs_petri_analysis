@@ -33,12 +33,14 @@ public:
 class DistributedSystem {
 	std::string name;
 	std::string dotFileName;
+	std::string outPutFile;
 	std::vector<Server*> servers;
 	std::vector<DataBase*> dataBases;
     PetriNet* petriNetRepresentation;
 public:
 	void getDescritpionFromFile(const char *filename);
 	void parseName(std::string name);
+	PetriNet* getPnRepresentation();
 
 	void addServer(std::string name);
 	void addDataBase(std::string name);
@@ -48,7 +50,9 @@ public:
 
 	void printDistributedSystem();
 	void makeDotFile();
-	bool visualize();
+    std::string getDotFileName();
+	bool visualize(std::string dotfilePath, std::string outputPath);
+	void visualizePn();
 	PetriNet *getPnDescription(Server*);
     void makePnRepresentation();
 

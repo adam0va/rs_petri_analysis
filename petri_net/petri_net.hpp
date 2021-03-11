@@ -13,15 +13,18 @@ public:
 	friend class Arc;
 	friend class Place;
 	friend class Transition;
-	void changeName(std::string s) {}
+
+    virtual void changeName(std::string s) {}
 };
 
 class Place : public Vertex {
 	int tokens;
+	std::vector<int> netTokensNumber;
 public:
+    Place();
 	void printPlace();
     bool checkName(std::string);
-    void changeName(std::string s);
+    void changeName(std::string s) ;
 
 	friend class PetriNet;
 };
@@ -30,13 +33,14 @@ class Transition : public Vertex {
 public:
 	void printTransition();
     bool checkName(std::string);
-    void changeName(std::string s);
+    void changeName(std::string s) ;
 
 	friend class PetriNet;
 };
 
 class Arc {
 	Vertex *from, *to;
+	std::string horSyncLabel, vertSyncLabel;
 	int mark;
 
 public:
@@ -48,7 +52,7 @@ class PetriNet {
 	std::vector<Place*> places;
 	std::vector<Transition*> transitions;
 	std::vector<Arc*> arcs;
-	std::vector<PetriNet*> chips;
+	std::vector<PetriNet*> netTokens;
 
 	std::string dotFileName;
 	std::string name;
@@ -68,8 +72,8 @@ public:
     Place* addNextPlace();
 	Transition* addTransition(std::string);
     Transition* addNextTransition();
-	int addArc(Place *&from, Transition *&to, int mark);
-    int addArc(Transition *&from, Place *&to, int mark);
+	int addArc(Place *&from, Transition *&to, int mark, std::string horLabel, std::string vertLabel);
+    int addArc(Transition *&from, Place *&to, int mark, std::string horLabel, std::string vertLabel);
 
 	Place *findPlaceByName(std::string name);
 	Transition *findTransitionByName(std::string name);
@@ -81,6 +85,8 @@ public:
 	void parseName(std::string name);
 	void printPetriNet();
 	void makeDotFile(std::string fn = "");
+	std::string getDotFileName();
+    bool visualize();
 	bool visualize(std::string dotfilePath, std::string outputPath);
 
 	void seriesJoin(PetriNet*);

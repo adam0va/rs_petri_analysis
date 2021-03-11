@@ -19,6 +19,10 @@ void Vertex::setName(std::string name_) {
 	return;
 }
 
+Place::Place() {
+    tokens = 0;
+}
+
 void Place::printPlace() {
 	printf("Name: %s, tokens: %d\n", name.c_str(), tokens);
 }
@@ -128,19 +132,23 @@ bool PetriNet::hasTransition(std::string name) {
     return false;
 }
 
-int PetriNet::addArc(Place *&from, Transition *&to, int mark) {
+int PetriNet::addArc(Place *&from, Transition *&to, int mark, std::string horLabel, std::string vertLabel) {
 	Arc *newArc = new Arc;
 	newArc->from = from;
 	newArc->to = to;
 	newArc->mark = mark;
+	newArc->horSyncLabel = horLabel;
+	newArc->vertSyncLabel = vertLabel;
 	arcs.push_back(newArc);
 }
 
-int PetriNet::addArc(Transition *&from, Place *&to, int mark) {
+int PetriNet::addArc(Transition *&from, Place *&to, int mark, std::string horLabel, std::string vertLabel) {
     Arc *newArc = new Arc;
     newArc->from = from;
     newArc->to = to;
     newArc->mark = mark;
+    newArc->horSyncLabel = horLabel;
+    newArc->vertSyncLabel = vertLabel;
     arcs.push_back(newArc);
 }
 
@@ -209,19 +217,19 @@ void PetriNet::makeDotFile(std::string fn) {
     out.close();
 }
 
+std::string PetriNet::getDotFileName() {
+    return this->dotFileName;
+}
+
+bool PetriNet::visualize() {
+    std::string command = "dot -Tpdf " + this->dotFileName + " -o " + "outputPath.pdf";
+    system(command.c_str());
+    return false;
+}
+
 bool PetriNet::visualize(std::string dotfilePath, std::string outputPath) {
-    /*
-    GVC_t *gvc;
-    Agraph_t *g;
-    FILE *fp;
-    gvc = gvContext();
-    fp = fopen(dotfilePath.c_str(), "r");
-    g = agread(fp, 0);
-    gvLayout(gvc, g, "dot");
-    gvRender(gvc, g, "png", fopen(outputPath.c_str(), "w"));
-    gvFreeLayout(gvc, g);
-    agclose(g);
-    return (gvFreeContext(gvc));*/
+    std::string command = "dot -Tpdf " + dotfilePath + " -o " + outputPath;
+    system(command.c_str());
 }
 
 void PetriNet::parseName(std::string name) {
@@ -322,6 +330,7 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
 	for (int i = 0; i < document["Arcs"].Size(); i++) {
 		//char from[100], to[100];
 		int mark = 1;
+		std::string horLabel = "", vertLabel = "";
 		assert(document["Arcs"][i].IsObject());
 		
 		assert(document["Arcs"][i]["From"].IsString());
@@ -352,23 +361,22 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
 				return;
 			}
 		}
-		
+        if (document["Arcs"][i].HasMember("HorSync")) {
+            assert(document["Arcs"][i]["HorSync"].IsString());
+            horLabel = document["Arcs"][i]["Mark"].GetString();
+        }
+        if (document["Arcs"][i].HasMember("VertSync")) {
+            assert(document["Arcs"][i]["VertSync"].IsString());
+            vertLabel = document["Arcs"][i]["Mark"].GetString();
+        }
 		if (document["Arcs"][i].HasMember("Mark")) {
 			assert(document["Arcs"][i]["Mark"].IsInt());
 			mark = document["Arcs"][i]["Mark"].GetInt();
-
-			if (fromT)
-			    this->addArc(fromT, toV, mark);
-			else
-                this->addArc(fromV, toT, mark);
-		} else {
-            if (fromT) {
-                if (this->addArc(fromT, toV, 1) == -1)
-                    std::cout << "something went wrong\n";
-
-            } else if (this->addArc(fromV, toT, mark) == -1)
-                    std::cout << "something went wrong\n";
 		}
+        if (fromT)
+            this->addArc(fromT, toV, mark, horLabel, vertLabel);
+        else
+            this->addArc(fromV, toT, mark, horLabel, vertLabel);
 	}
     
     this->parseName(std::string(filename));
@@ -390,13 +398,13 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
 void PetriNet::seriesJoin(PetriNet* pn) {
     Place *newPlace = addNextPlace();
 
-    addArc(this->exits[0], newPlace, 1);
+    addArc(this->exits[0], newPlace, 1, "", "");
 
     pn->rename(lastPlaceNumber, lastTransitionNumber);
     lastPlaceNumber += pn->lastPlaceNumber;
     lastTransitionNumber += pn->lastTransitionNumber;
 
-    addArc(newPlace, pn->entrances[0], 1);
+    addArc(newPlace, pn->entrances[0], 1, "", "");
     this->places.insert(this->places.end(), pn->places.begin(), pn->places.end());
     this->transitions.insert(this->transitions.end(), pn->transitions.begin(), pn->transitions.end());
     this->arcs.insert(this->arcs.end(), pn->arcs.begin(), pn->arcs.end());
@@ -415,9 +423,9 @@ void PetriNet::parallelJoin(PetriNet* pn) {
     lastPlaceNumber += pn->lastPlaceNumber;
     lastTransitionNumber += pn->lastTransitionNumber;
 
-    addArc(newTransition1, newPlace1, 1);
-    addArc(newPlace1, entrances[0], 1);
-    addArc(newPlace1, pn->entrances[0], 1);
+    addArc(newTransition1, newPlace1, 1, "", "");
+    addArc(newPlace1, entrances[0], 1, "", "");
+    addArc(newPlace1, pn->entrances[0], 1, "", "");
 
     this->places.insert(this->places.end(), pn->places.begin(), pn->places.end());
     this->transitions.insert(this->transitions.end(), pn->transitions.begin(), pn->transitions.end());
@@ -437,14 +445,14 @@ void PetriNet::parallelJoin(std::vector<PetriNet*> pns) {
         pns[i]->rename(lastPlaceNumber, lastTransitionNumber);
         lastPlaceNumber += pns[i]->lastPlaceNumber;
         lastTransitionNumber += pns[i]->lastTransitionNumber;
-        addArc(newPlace1, pns[i]->entrances[0], 1);
+        addArc(newPlace1, pns[i]->entrances[0], 1, "", "");
         this->places.insert(this->places.end(), pns[i]->places.begin(), pns[i]->places.end());
         this->transitions.insert(this->transitions.end(), pns[i]->transitions.begin(), pns[i]->transitions.end());
         this->arcs.insert(this->arcs.end(), pns[i]->arcs.begin(), pns[i]->arcs.end());
     }
 
-    addArc(newTransition1, newPlace1, 1);
-    addArc(newPlace1, entrances[0], 1);
+    addArc(newTransition1, newPlace1, 1, "", "");
+    addArc(newPlace1, entrances[0], 1, "", "");
 
     findExits();
     findEntrances();
