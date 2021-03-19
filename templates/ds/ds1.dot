@@ -1,0 +1,10 @@
+digraph distributed_system {
+node [shape=box];
+"s1"
+"s1" -> "db1"
+"s2"
+"s2" -> "db2"
+"s3"
+"db1"
+"db2"
+}

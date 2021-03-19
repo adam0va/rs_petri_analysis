@@ -1,0 +1,15 @@
+digraph distributed_system {
+layout=neato
+node [shape=circle];  p1; p2; p3 [xlabel =1 ]; p4; 
+node [shape=box,fixedsize=true,width=0.9];  t1; t2; t3; t4; 
+t1->p1 [label = 5 ];
+p1->t2;
+t2->p2;
+p2->t3;
+t3->p3;
+p3->t2;
+t3->p4;
+p4->t4;
+overlap=false
+fontsize=12;
+}

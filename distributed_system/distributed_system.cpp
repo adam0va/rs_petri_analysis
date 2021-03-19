@@ -264,7 +264,7 @@ void DistributedSystem::makePnRepresentation() {
     }
     firstPn->parallelJoin(components);
     this->petriNetRepresentation = firstPn;
-    this->petriNetRepresentation->makeDotFile("templates/pn/DS.dot");
+    this->petriNetRepresentation->makeDotFile("templates/pn/DS.dot", false);
 }
 
 void DistributedSystem::visualizePn() {

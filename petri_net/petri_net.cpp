@@ -91,6 +91,19 @@ Place* PetriNet::addPlace(std::string name, int mark) { // добавить пр
 	return newPlace;
 }
 
+Place* PetriNet::addPlace(std::string name, PetriNet *net) {
+    Place *newPlace = new Place();
+    if (newPlace->checkName(name))
+        newPlace->name = name;
+    else
+        return NULL;
+    this->netTokens.push_back(net);
+    newPlace->netTokensNumber.push_back(netTokens.size() - 1);
+    places.push_back(newPlace);
+    lastPlaceNumber++;
+    return newPlace;
+}
+
 Place* PetriNet::addNextPlace() {
     Place *newPlace = new Place();
     newPlace->name = "s" + std::to_string(++lastPlaceNumber);
@@ -188,20 +201,54 @@ Transition* PetriNet::findTransitionByName(std::string name) {
 	return NULL;
 }
 
-void PetriNet::makeDotFile(std::string fn) {
-    this->dotFileName = fn == " " ? this->name + ".dot" : fn;
+std::string PetriNet::makeDotFile(std::string fn, bool isSubgraph) {
+    this->dotFileName = fn == "" ? this->name + ".dot" : fn;
+    printf("name of PN: %s\n", this->name.c_str());
     std::ofstream out(this->dotFileName.c_str());
-	out << "digraph distributed_system {\nlayout=neato\nnode [shape=circle];  ";
+    std::vector<std::string> filenames;
+    printf("FILENAME: 1%s1\n", dotFileName.c_str());
+    if (isSubgraph) {
+        out << "subgraph " << "sub" << " {\nstyle=filled;\ncolor=lightgrey;\n";
+    } else
+	    out << "digraph distributed_system {\nlayout=neato\nnode [shape=circle];  ";
 	for (int i = 0; i < places.size(); i++) {
 		out << places[i]->name;
+		if (places[i]->tokens) {
+		    out << " [xlabel =";
+            out << places[i]->tokens << " ]";
+		}
+        std::string file;
+		if (!places[i]->netTokensNumber.empty()) {
+		    for (int j = 0; j < places[i]->netTokensNumber.size(); j++) {
+		        file = this->netTokens[places[i]->netTokensNumber[j]]->makeDotFile("", true);
+		        filenames.push_back(file);
+		    }
+		}
 		out << "; ";
+		/*if (!places[i]->netTokensNumber.empty()) {
+            std::ofstream subgraph_file(file.c_str());
+            out << subgraph_file;
+            subgraph_file.close();
+		}*/
 	}
+
 	out << "\nnode [shape=box,fixedsize=true,width=0.9];  ";
 	for (int i = 0; i < transitions.size(); i++) {
 		out << transitions[i]->name;
 		out << "; ";
 	}
-	out << "\n";
+    out << "\n";
+	for (int i = 0; i < filenames.size(); i++) {
+        std::ifstream subgraph_file(filenames[i].c_str());
+        std::string line;
+        //out << subgraph_file;
+        while(getline(subgraph_file, line)){
+            out << line << "\n";
+        }
+
+        subgraph_file.close();
+	}
+    out << "\n";
 	for (int i = 0; i < arcs.size(); i++) {
 		out << arcs[i]->from->name;
         out << "->";
@@ -211,10 +258,21 @@ void PetriNet::makeDotFile(std::string fn) {
             out << arcs[i]->mark;
             out << " ]";
         }
+        if (arcs[i]->horSyncLabel != "") {
+            out << " [label = ";
+            out << arcs[i]->horSyncLabel;
+            out << " ]";
+        }
+        if (arcs[i]->vertSyncLabel != "") {
+            out << " [label = ";
+            out << arcs[i]->vertSyncLabel;
+            out << " ]";
+        }
         out << ";\n";
 	}
     out << "overlap=false\nfontsize=12;\n}";
     out.close();
+    return this->dotFileName;
 }
 
 std::string PetriNet::getDotFileName() {
@@ -222,8 +280,11 @@ std::string PetriNet::getDotFileName() {
 }
 
 bool PetriNet::visualize() {
+    printf("11\n");
     std::string command = "dot -Tpdf " + this->dotFileName + " -o " + "outputPath.pdf";
+    printf("12\n");
     system(command.c_str());
+    printf("13\n");
     return false;
 }
 
@@ -239,7 +300,6 @@ void PetriNet::parseName(std::string name) {
 		else 
 			return;
 	}
-	return;
 }
 
 void PetriNet::findExits() {
@@ -291,6 +351,7 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
     std::cout << std::endl;
 
     Document document;
+    int hasElementaryCount = 0;
 
     if (document.ParseInsitu(jsonCharArray).HasParseError()) {
     	std::cout << "Parse error" << std::endl;
@@ -305,8 +366,20 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
     	for (Value::ConstMemberIterator itr = document["Places"].MemberBegin(); itr != document["Places"].MemberEnd();
     		++itr) {
     		assert(itr->name.IsString());
-    		assert(itr->value.IsInt());
-    		this->addPlace(std::string(itr->name.GetString()), itr->value.GetInt());
+    		if (itr->value.IsInt()) {
+                this->addPlace(std::string(itr->name.GetString()), itr->value.GetInt());
+    		} else if (itr->value.IsString()) {
+    		    PetriNet *en = new PetriNet();
+    		    std::string name = std::string(itr->value.GetString());
+    		    assert(document.HasMember("Files"));
+    		    assert(document["Files"].HasMember(name.c_str()));
+                Value::ConstMemberIterator it = document["Files"].FindMember(name.c_str());
+                std::string filename = std::string(it->value.GetString());
+                en->getDescritpionFromFile(filename.c_str());
+                //this->netTokens.push_back(en);
+                this->addPlace(std::string(itr->name.GetString()), en);
+                printf("number of EN %d\n", netTokens.size());
+    		}
     	}
     } else 
     if (document["Places"].IsArray()) {
@@ -317,7 +390,7 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
     }
 
 	assert(document.HasMember("Transitions")); // проверяем, есть ли вершины-переходы в JSON'e (если нет, ошибка)
-    assert(document["Transitions"].IsArray()); // они могут быть представлены только в виде списка
+    assert(document["Transitions"].IsArray()); // они могут быть представлены только в виде массива
     for (int i = 0; i < document["Transitions"].Size(); i++) {
 		assert(document["Transitions"][i].IsString());
 		char buf[100];
@@ -342,7 +415,7 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
 		if (fromT) {
 			toV = findPlaceByName(std::string(document["Arcs"][i]["To"].GetString()));
 			if (!toV) {
-				printf("No such place or position: %s, %s", document["Arcs"][i]["From"].GetString(),
+				printf("No such place or position: %s, %s\n", document["Arcs"][i]["From"].GetString(),
 				 document["Arcs"][i]["To"].GetString());
 				return;
 			}
@@ -384,6 +457,12 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
 
     findEntrances();
     findExits();
+
+    for (int i = 0; i < this->netTokens.size(); i++) {
+        netTokens[i]->rename(lastPlaceNumber, lastTransitionNumber);
+        lastTransitionNumber = netTokens[i]->lastTransitionNumber;
+        lastPlaceNumber = netTokens[i]->lastPlaceNumber;
+    }
 
     printf("entrances: ");
     for (int i = 0; i < entrances.size(); i++) {

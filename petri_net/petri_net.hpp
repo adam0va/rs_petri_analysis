@@ -19,6 +19,7 @@ public:
 
 class Place : public Vertex {
 	int tokens;
+
 	std::vector<int> netTokensNumber;
 public:
     Place();
@@ -69,6 +70,7 @@ public:
 	std::vector<Arc*> getArcs();
 
 	Place* addPlace(std::string, int);
+    Place* addPlace(std::string, PetriNet*);
     Place* addNextPlace();
 	Transition* addTransition(std::string);
     Transition* addNextTransition();
@@ -84,7 +86,7 @@ public:
     void getDescritpionFromFile(const char *filename);
 	void parseName(std::string name);
 	void printPetriNet();
-	void makeDotFile(std::string fn = "");
+	std::string makeDotFile(std::string fn = "", bool isSubgraph = false);
 	std::string getDotFileName();
     bool visualize();
 	bool visualize(std::string dotfilePath, std::string outputPath);
