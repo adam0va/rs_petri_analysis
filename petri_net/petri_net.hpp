@@ -7,6 +7,7 @@
 class Vertex {
 	std::string name;
 public:
+    virtual ~Vertex() {};
 	std::string getName();
 	void setName(std::string name_);
 	friend class PetriNet;
@@ -19,29 +20,32 @@ public:
 
 class Place : public Vertex {
 	int tokens;
-
 	std::vector<int> netTokensNumber;
 public:
     Place();
+    ~Place();
 	void printPlace();
     bool checkName(std::string);
-    void changeName(std::string s) ;
+    void changeName(std::string s);
+    int getTokens();
 
 	friend class PetriNet;
+    friend class Arc;
 };
 
 class Transition : public Vertex {
+    std::string horSyncLabel, vertSyncLabel;
 public:
 	void printTransition();
     bool checkName(std::string);
     void changeName(std::string s) ;
 
 	friend class PetriNet;
+    friend class Arc;
 };
 
 class Arc {
 	Vertex *from, *to;
-	std::string horSyncLabel, vertSyncLabel;
 	int mark;
 
 public:
@@ -72,16 +76,22 @@ public:
 	Place* addPlace(std::string, int);
     Place* addPlace(std::string, PetriNet*);
     Place* addNextPlace();
-	Transition* addTransition(std::string);
+	Transition* addTransition(std::string, std::string horLabel, std::string vertLabel);
     Transition* addNextTransition();
-	int addArc(Place *&from, Transition *&to, int mark, std::string horLabel, std::string vertLabel);
-    int addArc(Transition *&from, Place *&to, int mark, std::string horLabel, std::string vertLabel);
+	int addArc(Place *&from, Transition *&to, int mark);
+    int addArc(Transition *&from, Place *&to, int mark);
 
 	Place *findPlaceByName(std::string name);
 	Transition *findTransitionByName(std::string name);
 
     bool hasPlace(std::string);
     bool hasTransition(std::string);
+    std::vector<Arc*> findArcs(Place* from);
+    std::vector<Arc*> findArcs(Transition* from);
+    std::vector<Arc*> findArcsBack(Place* to);
+    std::vector<Arc*> findArcsBack(Transition* to);
+    Transition *findPairHorTransition(Transition* t);
+    std::pair<Transition*, PetriNet*> findPairVertTransition(Transition* t);
 
     void getDescritpionFromFile(const char *filename);
 	void parseName(std::string name);
@@ -100,6 +110,11 @@ public:
 
     void findExits();
     void findEntrances();
+
+    bool checkTransitionWithSynchronization(Transition*);
+    Transition* canMakeStep(bool checkSync = false);
+    bool canMakeStep(Transition* t, bool checkSync = false);
+    void makeStep(Transition*, bool sync = false);
 };
 
 class NestedPetriNet : public PetriNet {

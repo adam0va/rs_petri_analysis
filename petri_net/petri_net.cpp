@@ -23,6 +23,9 @@ Place::Place() {
     tokens = 0;
 }
 
+Place::~Place() {
+}
+
 void Place::printPlace() {
 	printf("Name: %s, tokens: %d\n", name.c_str(), tokens);
 }
@@ -36,6 +39,10 @@ bool Place::checkName(std::string name) {
 
 void Place::changeName(std::string s) {
     this->name.insert(1, s);
+}
+
+int Place::getTokens() {
+    return tokens;
 }
 
 void Transition::printTransition() {
@@ -112,7 +119,7 @@ Place* PetriNet::addNextPlace() {
     return newPlace;
 }
 
-Transition* PetriNet::addTransition(std::string name) {
+Transition* PetriNet::addTransition(std::string name, std::string horLabel, std::string vertLabel) {
 	Transition *newTransition = new Transition();
 	if (newTransition->checkName(name))
         newTransition->name = name;
@@ -145,23 +152,75 @@ bool PetriNet::hasTransition(std::string name) {
     return false;
 }
 
-int PetriNet::addArc(Place *&from, Transition *&to, int mark, std::string horLabel, std::string vertLabel) {
+std::vector<Arc*> PetriNet::findArcs(Place* from) {
+    std::vector<Arc*> ret;
+    for (int i = 0; i < this->arcs.size(); i++) {
+        if (arcs[i]->from->getName() == from->getName())
+            ret.push_back(arcs[i]);
+    }
+    return ret;
+}
+
+std::vector<Arc*> PetriNet::findArcs(Transition* from) {
+    std::vector<Arc*> ret;
+    for (int i = 0; i < this->arcs.size(); i++) {
+        if (arcs[i]->from->getName() == from->getName())
+            ret.push_back(arcs[i]);
+    }
+    return ret;
+}
+
+std::vector<Arc*> PetriNet::findArcsBack(Place* to) {
+    std::vector<Arc*> ret;
+    for (int i = 0; i < this->arcs.size(); i++) {
+        if (arcs[i]->to->getName() == to->getName())
+            ret.push_back(arcs[i]);
+    }
+    return ret;
+}
+
+std::vector<Arc*> PetriNet::findArcsBack(Transition* to) {
+    std::vector<Arc*> ret;
+    for (int i = 0; i < this->arcs.size(); i++) {
+        if (arcs[i]->to->getName() == to->getName())
+            ret.push_back(arcs[i]);
+    }
+    return ret;
+}
+
+Transition* PetriNet::findPairHorTransition(Transition* t) {
+    for (int i = 0; i < transitions.size(); i++) {
+        if (transitions[i]->name != t->name &&
+            transitions[i]->horSyncLabel == t->horSyncLabel) {
+            return transitions[i];
+        }
+    }
+    return NULL;
+}
+
+std::pair<Transition*, PetriNet*> PetriNet::findPairVertTransition(Transition* t) {
+    for (int i = 0; i < netTokens.size(); i++) {
+        for (int j = 0; j < netTokens[i]->transitions.size(); j++) {
+            if (netTokens[i]->transitions[j]->name == t->name)
+                return std::pair<Transition*, PetriNet*>(netTokens[i]->transitions[j], netTokens[i]);
+        }
+    }
+    return std::pair<Transition*, PetriNet*>(NULL, NULL);
+}
+
+int PetriNet::addArc(Place *&from, Transition *&to, int mark) {
 	Arc *newArc = new Arc;
 	newArc->from = from;
 	newArc->to = to;
 	newArc->mark = mark;
-	newArc->horSyncLabel = horLabel;
-	newArc->vertSyncLabel = vertLabel;
 	arcs.push_back(newArc);
 }
 
-int PetriNet::addArc(Transition *&from, Place *&to, int mark, std::string horLabel, std::string vertLabel) {
+int PetriNet::addArc(Transition *&from, Place *&to, int mark) {
     Arc *newArc = new Arc;
     newArc->from = from;
     newArc->to = to;
     newArc->mark = mark;
-    newArc->horSyncLabel = horLabel;
-    newArc->vertSyncLabel = vertLabel;
     arcs.push_back(newArc);
 }
 
@@ -258,16 +317,6 @@ std::string PetriNet::makeDotFile(std::string fn, bool isSubgraph) {
             out << arcs[i]->mark;
             out << " ]";
         }
-        if (arcs[i]->horSyncLabel != "") {
-            out << " [label = ";
-            out << arcs[i]->horSyncLabel;
-            out << " ]";
-        }
-        if (arcs[i]->vertSyncLabel != "") {
-            out << " [label = ";
-            out << arcs[i]->vertSyncLabel;
-            out << " ]";
-        }
         out << ";\n";
 	}
     out << "overlap=false\nfontsize=12;\n}";
@@ -280,11 +329,8 @@ std::string PetriNet::getDotFileName() {
 }
 
 bool PetriNet::visualize() {
-    printf("11\n");
     std::string command = "dot -Tpdf " + this->dotFileName + " -o " + "outputPath.pdf";
-    printf("12\n");
     system(command.c_str());
-    printf("13\n");
     return false;
 }
 
@@ -378,7 +424,7 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
                 en->getDescritpionFromFile(filename.c_str());
                 //this->netTokens.push_back(en);
                 this->addPlace(std::string(itr->name.GetString()), en);
-                printf("number of EN %d\n", netTokens.size());
+                printf("number of EN %lu\n", netTokens.size());
     		}
     	}
     } else 
@@ -390,20 +436,34 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
     }
 
 	assert(document.HasMember("Transitions")); // проверяем, есть ли вершины-переходы в JSON'e (если нет, ошибка)
-    assert(document["Transitions"].IsArray()); // они могут быть представлены только в виде массива
-    for (int i = 0; i < document["Transitions"].Size(); i++) {
-		assert(document["Transitions"][i].IsString());
-		char buf[100];
-		sprintf(buf, "%s", document["Transitions"][i].GetString());
-		this->addTransition(std::string(buf));
-	}
+    //assert(document["Transitions"].IsArray()); // они могут быть представлены только в виде массива
+    if (document["Transitions"].IsArray()) {
+        for (int i = 0; i < document["Transitions"].Size(); i++) {
+            assert(document["Transitions"][i].IsString());
+            char buf[100];
+            sprintf(buf, "%s", document["Transitions"][i].GetString());
+            this->addTransition(std::string(buf), "", "");
+        }
+    } else {
+        for (Value::ConstMemberIterator itr = document["Transitions"].MemberBegin();
+        itr != document["Transitions"].MemberEnd(); ++itr) {
+            assert(itr->name.IsString());
+            assert(itr->value.IsString());
+            if (std::string(itr->value.GetString())[0] == 'h') {
+                this->addTransition(itr->name.GetString(), itr->value.GetString(), "");
+            } else {
+                this->addTransition(itr->name.GetString(), "", itr->value.GetString());
+            }
+
+
+        }
+    }
 
     assert(document.HasMember("Arcs")); // проверяем, есть ли дуги в JSON'e (если нет, ошибка)
     assert(document["Arcs"].IsArray());
 	for (int i = 0; i < document["Arcs"].Size(); i++) {
 		//char from[100], to[100];
 		int mark = 1;
-		std::string horLabel = "", vertLabel = "";
 		assert(document["Arcs"][i].IsObject());
 		
 		assert(document["Arcs"][i]["From"].IsString());
@@ -434,22 +494,15 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
 				return;
 			}
 		}
-        if (document["Arcs"][i].HasMember("HorSync")) {
-            assert(document["Arcs"][i]["HorSync"].IsString());
-            horLabel = document["Arcs"][i]["Mark"].GetString();
-        }
-        if (document["Arcs"][i].HasMember("VertSync")) {
-            assert(document["Arcs"][i]["VertSync"].IsString());
-            vertLabel = document["Arcs"][i]["Mark"].GetString();
-        }
+
 		if (document["Arcs"][i].HasMember("Mark")) {
 			assert(document["Arcs"][i]["Mark"].IsInt());
 			mark = document["Arcs"][i]["Mark"].GetInt();
 		}
         if (fromT)
-            this->addArc(fromT, toV, mark, horLabel, vertLabel);
+            this->addArc(fromT, toV, mark);
         else
-            this->addArc(fromV, toT, mark, horLabel, vertLabel);
+            this->addArc(fromV, toT, mark);
 	}
     
     this->parseName(std::string(filename));
@@ -477,13 +530,13 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
 void PetriNet::seriesJoin(PetriNet* pn) {
     Place *newPlace = addNextPlace();
 
-    addArc(this->exits[0], newPlace, 1, "", "");
+    addArc(this->exits[0], newPlace, 1);
 
     pn->rename(lastPlaceNumber, lastTransitionNumber);
     lastPlaceNumber += pn->lastPlaceNumber;
     lastTransitionNumber += pn->lastTransitionNumber;
 
-    addArc(newPlace, pn->entrances[0], 1, "", "");
+    addArc(newPlace, pn->entrances[0], 1);
     this->places.insert(this->places.end(), pn->places.begin(), pn->places.end());
     this->transitions.insert(this->transitions.end(), pn->transitions.begin(), pn->transitions.end());
     this->arcs.insert(this->arcs.end(), pn->arcs.begin(), pn->arcs.end());
@@ -502,9 +555,9 @@ void PetriNet::parallelJoin(PetriNet* pn) {
     lastPlaceNumber += pn->lastPlaceNumber;
     lastTransitionNumber += pn->lastTransitionNumber;
 
-    addArc(newTransition1, newPlace1, 1, "", "");
-    addArc(newPlace1, entrances[0], 1, "", "");
-    addArc(newPlace1, pn->entrances[0], 1, "", "");
+    addArc(newTransition1, newPlace1, 1);
+    addArc(newPlace1, entrances[0], 1);
+    addArc(newPlace1, pn->entrances[0], 1);
 
     this->places.insert(this->places.end(), pn->places.begin(), pn->places.end());
     this->transitions.insert(this->transitions.end(), pn->transitions.begin(), pn->transitions.end());
@@ -524,14 +577,14 @@ void PetriNet::parallelJoin(std::vector<PetriNet*> pns) {
         pns[i]->rename(lastPlaceNumber, lastTransitionNumber);
         lastPlaceNumber += pns[i]->lastPlaceNumber;
         lastTransitionNumber += pns[i]->lastTransitionNumber;
-        addArc(newPlace1, pns[i]->entrances[0], 1, "", "");
+        addArc(newPlace1, pns[i]->entrances[0], 1);
         this->places.insert(this->places.end(), pns[i]->places.begin(), pns[i]->places.end());
         this->transitions.insert(this->transitions.end(), pns[i]->transitions.begin(), pns[i]->transitions.end());
         this->arcs.insert(this->arcs.end(), pns[i]->arcs.begin(), pns[i]->arcs.end());
     }
 
-    addArc(newTransition1, newPlace1, 1, "", "");
-    addArc(newPlace1, entrances[0], 1, "", "");
+    addArc(newTransition1, newPlace1, 1);
+    addArc(newPlace1, entrances[0], 1);
 
     findExits();
     findEntrances();
@@ -558,6 +611,86 @@ void PetriNet::rename(int placesN, int transitionsN) {
         std::string number = this->transitions[i]->name.substr(1, this->transitions[i]->name.length() - 1);
         int n = stoi(number) + transitionsN;
         this->transitions[i]->setName("t" + std::to_string(n));
+    }
+}
+
+bool PetriNet::checkTransitionWithSynchronization(Transition* t) {
+    // найти парную
+    if (t->horSyncLabel != "") {
+        Transition *pairTransition = findPairHorTransition(t);
+        return canMakeStep(pairTransition,false);
+    } else {
+        // найти сеть Петри в которой переход
+        std::pair<Transition*, PetriNet*> p = findPairVertTransition(t);
+        return p.second->canMakeStep(p.first, false);
+    }
+
+}
+
+Transition* PetriNet::canMakeStep(bool checkSync) {
+    std::vector<Transition*> possibleTransitions;
+    // для каждого перехода найти все дуги, которые в него входят
+    for (int i = 0; i < transitions.size(); i++) {
+        std::vector<Arc*> arcsIn = findArcsBack(transitions[i]);
+        int suit = true;
+        for (int j = 0; j < arcsIn.size(); j++) {
+            if (checkSync && (transitions[i]->vertSyncLabel != "" || transitions[i]->horSyncLabel != "")) {
+                // найти парный переход
+                suit = checkTransitionWithSynchronization(transitions[i]);
+                // проверить может ли он сработать
+            }
+            // проверить что для всех входных позиций можно совершить переход
+            if (arcsIn[j]->mark > ((Place*)arcsIn[j]->from)->getTokens())
+                suit = false;
+        }
+        if (suit)
+            possibleTransitions.push_back(transitions[i]);
+    }
+
+    if (possibleTransitions.empty()) {
+        return NULL;
+    } else {
+        printf("size: %lu\n", possibleTransitions.size());
+        srand( time( 0 ) );
+        int idx = rand() % possibleTransitions.size(); // возвращаем случайную дугу
+        printf("%d\n", idx);
+        return possibleTransitions[idx];
+    }
+}
+
+bool PetriNet::canMakeStep(Transition* t, bool checkSync) {
+    std::vector<Arc*> arcsIn = findArcsBack(t);
+    int suit = true;
+    for (int j = 0; j < arcsIn.size(); j++) {
+        if (checkSync && (t->vertSyncLabel != "" || t->horSyncLabel != "")) {
+            // найти парный переход
+            suit = checkTransitionWithSynchronization(t);
+            // проверить может ли он сработать
+        }
+        // проверить что для всех входных позиций можно совершить переход
+        if (arcsIn[j]->mark > ((Place*)arcsIn[j]->from)->getTokens())
+            suit = false;
+    }
+    return suit;
+}
+
+void PetriNet::makeStep(Transition* t, bool sync) {
+    std::vector<Arc*> arcsIn = findArcsBack(t), arcsOut = findArcs(t);
+    for (int i = 0; i < arcsIn.size(); i++) {
+        ((Place*)arcsIn[i]->from)->tokens -= arcsIn[i]->mark;
+    }
+    if (sync) {
+        if (t->horSyncLabel != "") {
+            Transition *pairTransition = findPairHorTransition(t);
+            makeStep(pairTransition, false);
+        }
+        if (t->vertSyncLabel != "") {
+            std::pair<Transition*, PetriNet*> p = findPairVertTransition(t);
+            p.second->makeStep(p.first, false);
+        }
+    }
+    for (int i = 0; i < arcsOut.size(); i++) {
+        ((Place*)arcsOut[i]->to)->tokens += arcsOut[i]->mark;
     }
 }
 

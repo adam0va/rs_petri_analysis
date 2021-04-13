@@ -1,16 +1,22 @@
 {
     "Places" : {
-        "p1" : 0,
+		"p0" : 2,
+        "p1" : 2,
         "p2" : 0,
         "p3" : 1,
         "p4" : 0
     },
     "Transitions" : ["t1", "t2", "t3", "t4"],
-    "Arcs" : [ 
+    "Arcs" : [
+		{
+			"From" : "p0",
+			"To" : "t1",
+			"Mark" : 1
+		},
     	{ 
     		"From" : "t1",
     		"To" : "p1",
-			"Mark" : 5
+			"Mark" : 1
     	},
     	{ 
     		"From" : "p1",

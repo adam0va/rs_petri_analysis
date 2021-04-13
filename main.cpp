@@ -13,11 +13,18 @@ int main() {
 
 	PetriNet *pn = new PetriNet();
 	pn->getDescritpionFromFile("templates/pn/server_with_db.json");
-	printf("1\n");
 	pn->makeDotFile("");
-    printf("2\n");
 	pn->visualize();
-    printf("3\n");
+    Transition *transition = pn->canMakeStep(true);
+    if (transition) {
+        transition->printTransition();
+        pn->makeStep(transition);
+        transition = pn->canMakeStep(true);
+        transition->printTransition();
+        pn->makeStep(transition);
+        pn->makeDotFile("");
+        pn->visualize();
+    }
 
 	return 0;
 }
