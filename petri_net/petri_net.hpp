@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+//#include "../distributed_system/distributed_system.hpp"
 
 class Vertex {
 	std::string name;
@@ -53,11 +54,18 @@ public:
 	friend class PetriNet;
 };
 
+class Markup {
+    std::vector<Place*> places;
+    //std::vector<PetriNet*> netTokens;
+};
+
 class PetriNet {
 	std::vector<Place*> places;
 	std::vector<Transition*> transitions;
 	std::vector<Arc*> arcs;
 	std::vector<PetriNet*> netTokens;
+
+	std::vector<Markup*> markups;
 
 	std::string dotFileName;
 	std::string name;
@@ -67,11 +75,21 @@ class PetriNet {
 
     std::vector<Transition*> entrances;
     std::vector<Transition*> exits;
+
+    Transition *outToOtherServer;
+    Place *inFromOtherServer;
+    Transition *syncFromOtherServerOut;
+    Transition *syncFromOtherServerIn;
 public:
 	PetriNet();
 	std::vector<Place*> getPlaces();
 	std::vector<Transition*> getTransitions();
 	std::vector<Arc*> getArcs();
+
+    Transition *getOutToOtherServer();
+    Place *getInFromOtherServer();
+    Transition *getSyncFromOtherServerOut();
+    Transition *getSyncFromOtherServerIn();
 
 	Place* addPlace(std::string, int);
     Place* addPlace(std::string, PetriNet*);
@@ -101,9 +119,9 @@ public:
     bool visualize();
 	bool visualize(std::string dotfilePath, std::string outputPath);
 
-	void seriesJoin(PetriNet*);
-    void parallelJoin(PetriNet*);
-    void parallelJoin(std::vector<PetriNet*>);
+	void seriesJoin(PetriNet*&);
+    void parallelJoin(PetriNet*&);
+    void parallelJoin(std::vector<PetriNet*> &pns);
 
     void rename(std::string);
     void rename(int places, int transitions);

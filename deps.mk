@@ -30,7 +30,9 @@ petri_net.o: petri_net/petri_net.cpp petri_net/petri_net.hpp \
   /usr/local/include/graphviz/textspan.h \
   /usr/local/include/graphviz/cgraph.h /usr/local/include/graphviz/cdt.h \
   /usr/local/include/graphviz/usershape.h \
-  /usr/local/include/graphviz/gvplugin.h
+  /usr/local/include/graphviz/gvplugin.h \
+  petri_net/../distributed_system/distributed_system.hpp \
+  petri_net/../distributed_system/../petri_net/petri_net.hpp
 distributed_system.o: distributed_system/distributed_system.cpp \
   distributed_system/../rapidjson/document.h \
   distributed_system/../rapidjson/reader.h \

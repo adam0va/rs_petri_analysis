@@ -17,17 +17,20 @@ class Server {
 	std::string name;
 	std::vector<DataBase*> dbConnections;
 	std::vector<Server*> serverConnections;
+	PetriNet *pnRepresentation;
 public:
 	Server(std::string name);
 	std::string getName();
 
 	std::vector<Server*> getServerConnections();
 	std::vector<DataBase*> getDbConnections();
+	PetriNet *getPnRepresentation();
 
 	void addConnection(Server *server);
 	void addConnection(DataBase *db);
 
 	void printServer();
+	friend class DistributedSystem;
 };
 
 class DistributedSystem {

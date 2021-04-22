@@ -1,6 +1,8 @@
 {
-  "Places" : ["p1", "p2", "p3", "p4"],
-  "Transitions" : ["t1", "t2", "t3", "t4"],
+  "Places" : ["p1", "p2", "p3"],
+  "Transitions" : ["t1", "t2", "t3", "t4", "t5"],
+  "InFromOtherServer" : "p1",
+  "SyncWithOtherServerIn" : "t5",
   "Arcs" : [
     {
       "From" : "t1",
@@ -20,19 +22,19 @@
     },
     {
       "From" : "t3",
+      "To" : "p1"
+    },
+    {
+      "From" : "t3",
       "To" : "p3"
     },
     {
       "From" : "p3",
-      "To" : "t2"
-    },
-    {
-      "From" : "t3",
-      "To" : "p4"
-    },
-    {
-      "From" : "p4",
       "To" : "t4"
+    },
+    {
+      "From" : "p3",
+      "To" : "t5"
     }
   ]
 }

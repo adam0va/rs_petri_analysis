@@ -27,6 +27,10 @@ std::vector<DataBase*> Server::getDbConnections() {
 	return this->dbConnections;
 }
 
+PetriNet *Server::getPnRepresentation() {
+    return this->pnRepresentation;
+}
+
 void Server::addConnection(Server *server) {
 	this->serverConnections.push_back(server);
 }
@@ -259,10 +263,39 @@ PetriNet* DistributedSystem::getPnDescription(Server *s) {
 void DistributedSystem::makePnRepresentation() {
     std::vector<PetriNet*> components;
     PetriNet *firstPn = getPnDescription(this->servers[0]);
+    this->servers[0]->pnRepresentation = firstPn;
+    printf("00000\n");
     for (int i = 1; i < this->servers.size(); i++) {
         components.push_back(getPnDescription(this->servers[i]));
+        //this->servers[i]->pnRepresentation = getPnDescription(this->servers[i]);
     }
+    printf("11111\n");
     firstPn->parallelJoin(components);
+    this->servers[0]->pnRepresentation = firstPn;
+    for (int i = 1; i < this->servers.size(); i++) {
+        this->servers[i]->pnRepresentation = components[i];
+    }
+    printf("1111100\n");
+    for (int i = 0; i < this->servers.size(); i++) {
+        for (int j = 0; j < this->servers[i]->serverConnections.size(); j++) {
+            printf("from: %s, to: %s\n", this->servers[i]->getName().c_str(), this->servers[i]->serverConnections[j]->getName().c_str());
+            printf("11111001\n");
+            Transition *t = servers[i]->getPnRepresentation()->getOutToOtherServer();
+            if (!t)
+                printf("NULL");
+            else
+                t->printTransition();
+            printf("11111002\n");
+            Place *p = servers[i]->serverConnections[j]->getPnRepresentation()->getInFromOtherServer();
+            if (!p)
+                printf("NULL");
+            else
+                p->printPlace();
+            firstPn->addArc(t, p, 1);
+            // добавить метки
+        }
+    }
+    printf("22222\n");
     this->petriNetRepresentation = firstPn;
     this->petriNetRepresentation->makeDotFile("templates/pn/DS.dot", false);
 }
