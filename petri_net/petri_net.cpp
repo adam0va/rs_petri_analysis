@@ -6,7 +6,6 @@
 #include <cstdio>
 #include <string>
 #include <fstream>
-#include <graphviz/gvc.h>
 
 using namespace rapidjson;
 

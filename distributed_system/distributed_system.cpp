@@ -7,7 +7,6 @@
 #include <vector>
 #include <cstring>
 #include "distributed_system.hpp"
-#include <graphviz/gvc.h>
 
 using namespace rapidjson;
 
