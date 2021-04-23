@@ -1,17 +1,16 @@
 {
   "Places" : {
-    "p1" : "DB1", 
-    "p2" : 0, 
+    "p1" : 1,
+    "p2" : "DB1",
     "p3" : 0, 
     "p4" : 0, 
     "p5" : 0, 
-    "p6" : 0, 
-    "p7" : 1
+    "p6" : 0
   },
   "Files" : {
     "DB1" : "templates/pn/db.json"
   },
-  "Transitions" : ["t1", "t2", "t3", "t4", "t5", "t6"],
+  "Transitions" : ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9"],
   "Arcs" : [
     {
       "From" : "t1",
@@ -38,37 +37,49 @@
       "To" : "t4"
     },
     {
-      "From" : "p4",
+      "From" : "p1",
       "To" : "t5"
     },
     {
-      "From" : "t4",
+      "From" : "t5",
       "To" : "p4"
     },
 
     {
-      "From" : "t2",
+      "From" : "p4",
+      "To" : "t6"
+    },
+    {
+      "From" : "t6",
       "To" : "p5"
     },
     {
+      "From" : "t4",
+      "To" : "p5"
+    },
+    {
+      "From" : "t4",
+      "To" : "p2"
+    },
+    {
       "From" : "p5",
-      "To" : "t5"
+      "To" : "t7"
     },
     {
-      "From" : "t5",
-      "To" : "p7"
-    },
-    {
-      "From" : "p7",
-      "To" : "t2"
-    },
-    {
-      "From" : "t5",
+      "From" : "t7",
       "To" : "p6"
     },
     {
+      "From" : "t7",
+      "To" : "p1"
+    },
+    {
       "From" : "p6",
-      "To" : "t6"
+      "To" : "t8"
+    },
+    {
+      "From" : "p6",
+      "To" : "t9"
     }
   ]
 }

@@ -85,6 +85,22 @@ std::vector<Arc*> PetriNet::getArcs() {
 	return arcs;
 }
 
+Transition *PetriNet::getOutToOtherServer() {
+    return this->outToOtherServer;
+}
+
+Place *PetriNet::getInFromOtherServer() {
+    return this->inFromOtherServer;
+}
+
+Transition *PetriNet::getSyncFromOtherServerOut() {
+    return this->syncFromOtherServerOut;
+}
+
+Transition *PetriNet::getSyncFromOtherServerIn() {
+    return this->syncFromOtherServerIn;
+}
+
 Place* PetriNet::addPlace(std::string name, int mark) { // добавить проверку правильности написания имени
 	Place *newPlace = new Place();
 	if (newPlace->checkName(name))
@@ -435,7 +451,6 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
     }
 
 	assert(document.HasMember("Transitions")); // проверяем, есть ли вершины-переходы в JSON'e (если нет, ошибка)
-    //assert(document["Transitions"].IsArray()); // они могут быть представлены только в виде массива
     if (document["Transitions"].IsArray()) {
         for (int i = 0; i < document["Transitions"].Size(); i++) {
             assert(document["Transitions"][i].IsString());
@@ -503,6 +518,28 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
         else
             this->addArc(fromV, toT, mark);
 	}
+
+	if (document.HasMember("OutToOtherServer")) {
+	    Transition* t = this->findTransitionByName(
+	            std::string(document["OutToOtherServer"].GetString()));
+	    this->outToOtherServer = t;
+	}
+    if (document.HasMember("InFromOtherServer")) {
+        Place* p = this->findPlaceByName(
+                std::string(document["InFromOtherServer"].GetString()));
+        this->inFromOtherServer = p;
+    }
+    if (document.HasMember("SyncWithOtherServerOut")) {
+        Transition* t = this->findTransitionByName(
+                std::string(document["SyncWithOtherServerOut"].GetString()));
+        this->syncFromOtherServerOut = t;
+    }
+    if (document.HasMember("SyncWithOtherServerIn")) {
+        Transition* t = this->findTransitionByName(
+                std::string(document["SyncWithOtherServerIn"].GetString()));
+        this->syncFromOtherServerIn = t;
+    }
+
     
     this->parseName(std::string(filename));
     this->printPetriNet();
@@ -526,7 +563,7 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
     }
 }
 
-void PetriNet::seriesJoin(PetriNet* pn) {
+void PetriNet::seriesJoin(PetriNet* &pn) {
     Place *newPlace = addNextPlace();
 
     addArc(this->exits[0], newPlace, 1);
@@ -546,7 +583,7 @@ void PetriNet::seriesJoin(PetriNet* pn) {
     makeDotFile();
 }
 
-void PetriNet::parallelJoin(PetriNet* pn) {
+void PetriNet::parallelJoin(PetriNet* &pn) {
     Place *newPlace1 = addNextPlace();
     Transition *newTransition1 = addNextTransition();
 
@@ -568,7 +605,7 @@ void PetriNet::parallelJoin(PetriNet* pn) {
     makeDotFile();
 }
 
-void PetriNet::parallelJoin(std::vector<PetriNet*> pns) {
+void PetriNet::parallelJoin(std::vector<PetriNet*> &pns) {
     Place *newPlace1 = addNextPlace();
     Transition *newTransition1 = addNextTransition();
 
@@ -611,6 +648,11 @@ void PetriNet::rename(int placesN, int transitionsN) {
         int n = stoi(number) + transitionsN;
         this->transitions[i]->setName("t" + std::to_string(n));
     }
+    printf("rename: \n");
+    if (this->inFromOtherServer)
+        this->inFromOtherServer->printPlace();
+    if (this->outToOtherServer)
+        this->outToOtherServer->printTransition();
 }
 
 bool PetriNet::checkTransitionWithSynchronization(Transition* t) {
@@ -623,7 +665,6 @@ bool PetriNet::checkTransitionWithSynchronization(Transition* t) {
         std::pair<Transition*, PetriNet*> p = findPairVertTransition(t);
         return p.second->canMakeStep(p.first, false);
     }
-
 }
 
 Transition* PetriNet::canMakeStep(bool checkSync) {

@@ -2,17 +2,17 @@
 #include "distributed_system/distributed_system.hpp"
 
 int main() {
-	/*DistributedSystem *ds = new DistributedSystem();
+	DistributedSystem *ds = new DistributedSystem();
 	printf("hello\n");
 	ds->getDescritpionFromFile("templates/ds/ds1.json");
     printf("hello\n");
     ds->makeDotFile();
 	ds->makePnRepresentation();
 	//ds->printDistributedSystem();
-	ds->visualizePn();*/
+	ds->visualizePn();
 
-	PetriNet *pn = new PetriNet();
-	pn->getDescritpionFromFile("templates/pn/server_with_db.json");
+	/*PetriNet *pn = new PetriNet();
+	pn->getDescritpionFromFile("templates/pn/server_with_connections.json");
 	pn->makeDotFile("");
 	pn->visualize();
     Transition *transition = pn->canMakeStep(true);
@@ -24,7 +24,7 @@ int main() {
         pn->makeStep(transition);
         pn->makeDotFile("");
         pn->visualize();
-    }
+    }*/
 
 	return 0;
 }
