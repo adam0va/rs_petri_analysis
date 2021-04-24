@@ -71,6 +71,10 @@ PetriNet::PetriNet() {
 	std::string name = "";
     lastTransitionNumber = 0;
     lastPlaceNumber = 0;
+    inFromOtherServer = NULL;
+    outToOtherServer = NULL;
+    syncFromOtherServerIn = NULL;
+    syncFromOtherServerOut = NULL;
 }
 
 std::vector<Place*> PetriNet::getPlaces() {
@@ -523,22 +527,30 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
 	    Transition* t = this->findTransitionByName(
 	            std::string(document["OutToOtherServer"].GetString()));
 	    this->outToOtherServer = t;
-	}
+	    printf("1: ");
+	    this->getOutToOtherServer()->printTransition();
+	} else
+	    this->outToOtherServer = NULL;
     if (document.HasMember("InFromOtherServer")) {
         Place* p = this->findPlaceByName(
                 std::string(document["InFromOtherServer"].GetString()));
         this->inFromOtherServer = p;
-    }
+        printf("2: ");
+        this->getInFromOtherServer()->printPlace();
+    } else
+        this->inFromOtherServer = NULL;
     if (document.HasMember("SyncWithOtherServerOut")) {
         Transition* t = this->findTransitionByName(
                 std::string(document["SyncWithOtherServerOut"].GetString()));
         this->syncFromOtherServerOut = t;
-    }
+    } else
+        this->syncFromOtherServerOut = NULL;
     if (document.HasMember("SyncWithOtherServerIn")) {
         Transition* t = this->findTransitionByName(
                 std::string(document["SyncWithOtherServerIn"].GetString()));
         this->syncFromOtherServerIn = t;
-    }
+    } else
+        this->syncFromOtherServerIn = NULL;
 
     
     this->parseName(std::string(filename));
