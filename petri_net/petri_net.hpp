@@ -56,7 +56,6 @@ public:
 
 class Markup {
     std::vector<Place*> places;
-    //std::vector<PetriNet*> netTokens;
 };
 
 class PetriNet {
@@ -65,7 +64,7 @@ class PetriNet {
 	std::vector<Arc*> arcs;
 	std::vector<PetriNet*> netTokens;
 
-	std::vector<Markup*> markups;
+	std::vector<std::vector<Place*>> markups;
 
 	std::string dotFileName;
 	std::string name;
@@ -133,6 +132,8 @@ public:
     Transition* canMakeStep(bool checkSync = false);
     bool canMakeStep(Transition* t, bool checkSync = false);
     void makeStep(Transition*, bool sync = false);
+    void saveMarkup(std::vector<Place*> p);
+    void runNet();
 };
 
 class NestedPetriNet : public PetriNet {
