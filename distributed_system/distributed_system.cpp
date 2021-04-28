@@ -272,13 +272,12 @@ void DistributedSystem::makePnRepresentation() {
     }
     for (int i = 0; i < this->servers.size(); i++) {
         for (int j = 0; j < this->servers[i]->serverConnections.size(); j++) {
-            Transition *t = servers[i]->getPnRepresentation()->getOutToOtherServer();
+                Transition *t = servers[i]->getPnRepresentation()->getOutToOtherServer();
             Place *p = servers[i]->serverConnections[j]->getPnRepresentation()->getInFromOtherServer();
             firstPn->addArc(t, p, 1);
             // добавить метки
         }
     }
-    printf("22222\n");
     this->petriNetRepresentation = firstPn;
     this->petriNetRepresentation->makeDotFile("templates/pn/DS.dot", false);
 }

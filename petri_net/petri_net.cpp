@@ -132,7 +132,7 @@ Place* PetriNet::addPlace(std::string name, PetriNet *net) {
 
 Place* PetriNet::addNextPlace() {
     Place *newPlace = new Place();
-    newPlace->name = "s" + std::to_string(++lastPlaceNumber);
+    newPlace->name = "p" + std::to_string(++lastPlaceNumber);
     newPlace->tokens = 0;
     places.push_back(newPlace);
     return newPlace;
@@ -151,7 +151,7 @@ Transition* PetriNet::addTransition(std::string name, std::string horLabel, std:
 
 Transition* PetriNet::addNextTransition() {
     Transition *newTransition = new Transition();
-    newTransition->name = "s" + std::to_string(++lastTransitionNumber);
+    newTransition->name = "t" + std::to_string(++lastTransitionNumber);
     transitions.push_back(newTransition);
     lastTransitionNumber++;
     return newTransition;
@@ -284,9 +284,8 @@ std::string PetriNet::makeDotFile(std::string fn, bool isSubgraph) {
     printf("name of PN: %s\n", this->name.c_str());
     std::ofstream out(this->dotFileName.c_str());
     std::vector<std::string> filenames;
-    printf("FILENAME: 1%s1\n", dotFileName.c_str());
     if (isSubgraph) {
-        out << "subgraph " << "sub" << " {\nstyle=filled;\ncolor=lightgrey;\n";
+        out << "subgraph " << "sub" << " {\nstyle=filled;\ncolor=grey;\n";
     } else
 	    out << "digraph distributed_system {\nlayout=neato\nnode [shape=circle];  ";
 	for (int i = 0; i < places.size(); i++) {
@@ -527,30 +526,22 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
 	    Transition* t = this->findTransitionByName(
 	            std::string(document["OutToOtherServer"].GetString()));
 	    this->outToOtherServer = t;
-	    printf("1: ");
-	    this->getOutToOtherServer()->printTransition();
-	} else
-	    this->outToOtherServer = NULL;
+	}
     if (document.HasMember("InFromOtherServer")) {
         Place* p = this->findPlaceByName(
                 std::string(document["InFromOtherServer"].GetString()));
         this->inFromOtherServer = p;
-        printf("2: ");
-        this->getInFromOtherServer()->printPlace();
-    } else
-        this->inFromOtherServer = NULL;
+    }
     if (document.HasMember("SyncWithOtherServerOut")) {
         Transition* t = this->findTransitionByName(
                 std::string(document["SyncWithOtherServerOut"].GetString()));
         this->syncFromOtherServerOut = t;
-    } else
-        this->syncFromOtherServerOut = NULL;
+    }
     if (document.HasMember("SyncWithOtherServerIn")) {
         Transition* t = this->findTransitionByName(
                 std::string(document["SyncWithOtherServerIn"].GetString()));
         this->syncFromOtherServerIn = t;
-    } else
-        this->syncFromOtherServerIn = NULL;
+    }
 
     
     this->parseName(std::string(filename));
@@ -732,11 +723,11 @@ void PetriNet::makeStep(Transition* t, bool sync) {
         ((Place*)arcsIn[i]->from)->tokens -= arcsIn[i]->mark;
     }
     if (sync) {
-        if (t->horSyncLabel != "") {
+        if (!t->horSyncLabel.empty()) {
             Transition *pairTransition = findPairHorTransition(t);
             makeStep(pairTransition, false);
         }
-        if (t->vertSyncLabel != "") {
+        if (!t->vertSyncLabel.empty()) {
             std::pair<Transition*, PetriNet*> p = findPairVertTransition(t);
             p.second->makeStep(p.first, false);
         }
@@ -744,6 +735,15 @@ void PetriNet::makeStep(Transition* t, bool sync) {
     for (int i = 0; i < arcsOut.size(); i++) {
         ((Place*)arcsOut[i]->to)->tokens += arcsOut[i]->mark;
     }
+}
+
+void PetriNet::saveMarkup(std::vector<Place*> p) {
+    this->markups.push_back(p);
+
+}
+
+void PetriNet::runNet() {
+
 }
 
 
