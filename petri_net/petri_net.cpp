@@ -525,11 +525,16 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
 	    Transition* t = this->findTransitionByName(
 	            std::string(document["OutToOtherServer"].GetString()));
 	    this->outToOtherServer = t;
+
+	    printf("Out to:");
+	    outToOtherServer->printTransition();
 	}
     if (document.HasMember("InFromOtherServer")) {
         Place* p = this->findPlaceByName(
                 std::string(document["InFromOtherServer"].GetString()));
         this->inFromOtherServer = p;
+        printf("In from:");
+        inFromOtherServer->printPlace();
     }
     if (document.HasMember("SyncWithOtherServerOut")) {
         Transition* t = this->findTransitionByName(
