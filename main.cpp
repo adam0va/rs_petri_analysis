@@ -1,15 +1,27 @@
 #include "petri_net/petri_net.hpp"
 #include "distributed_system/distributed_system.hpp"
+#include <iostream>
 
 int main() {
 	DistributedSystem *ds = new DistributedSystem();
-	printf("hello\n");
 	ds->getDescritpionFromFile("templates/ds/ds1.json");
-    printf("hello\n");
     ds->makeDotFile();
+    ds->visualize(ds->getDotFileName(), "");
 	ds->makePnRepresentation();
 	//ds->printDistributedSystem();
 	ds->visualizePn();
+    // do you want to run net?
+    std::string input;
+    bool wantToRun = false, printTrans = false;
+    std::cout << "Do you want to run net? y/anything else\n";
+    std::cin >> input;
+    wantToRun = input == "y";
+    std::cout << "Do you want to see transitions that fire? y/anything else\n";
+    std::cin >> input;
+    printTrans = input == "y";
+    // do you want to see transitions that fire?
+    if (wantToRun)
+	    ds->getPnRepresentation()->runNet(printTrans);
 
 	/*PetriNet *pn = new PetriNet();
 	pn->getDescritpionFromFile("templates/pn/server_with_connections.json");

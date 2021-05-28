@@ -13,13 +13,20 @@ public:
 	void printDb();
 };
 
+enum ServerTypes {
+    APP_SERVER,
+    PROXY_SERVER,
+    WEB_SERVER
+};
+
 class Server {
 	std::string name;
+	ServerTypes type;
 	std::vector<DataBase*> dbConnections;
 	std::vector<Server*> serverConnections;
 	PetriNet *pnRepresentation;
 public:
-	Server(std::string name);
+	Server(std::string &name, ServerTypes type = APP_SERVER);
 	std::string getName();
 
 	std::vector<Server*> getServerConnections();
@@ -45,7 +52,7 @@ public:
 	void parseName(std::string name);
 	PetriNet* getPnRepresentation();
 
-	void addServer(std::string name);
+	void addServer(std::string name, ServerTypes type = APP_SERVER);
 	void addDataBase(std::string name);
 
 	Server* findServerByName(std::string name);
@@ -60,12 +67,5 @@ public:
     void makePnRepresentation();
 
 };
-
-
-
-
-
-
-
 
 #endif

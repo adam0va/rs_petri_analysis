@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 //#include "../distributed_system/distributed_system.hpp"
 
 class Vertex {
@@ -39,7 +40,11 @@ class Transition : public Vertex {
 public:
 	void printTransition();
     bool checkName(std::string);
-    void changeName(std::string s) ;
+    void changeName(std::string s);
+    void setHorSync(std::string);
+    void setHorSync(int);
+    void setVertSync(std::string);
+    void setVertSync(int);
 
 	friend class PetriNet;
     friend class Arc;
@@ -65,12 +70,15 @@ class PetriNet {
 	std::vector<PetriNet*> netTokens;
 
 	std::vector<std::vector<Place*>> markups;
+    std::map<Transition*, int> transitionWorkCounter;
 
 	std::string dotFileName;
 	std::string name;
 
 	int lastTransitionNumber;
 	int lastPlaceNumber;
+	int lastHorSyncNumber;
+    int lastVertSyncNumber;
 
     std::vector<Transition*> entrances;
     std::vector<Transition*> exits;
@@ -89,6 +97,10 @@ public:
     Place *getInFromOtherServer();
     Transition *getSyncFromOtherServerOut();
     Transition *getSyncFromOtherServerIn();
+    int getLastHorSyncNumber();
+    int getLastVertSyncNumber();
+    void setLastHorSyncNumber(int);
+    void setLastVertSyncNumber(int);
 
 	Place* addPlace(std::string, int);
     Place* addPlace(std::string, PetriNet*);
@@ -123,7 +135,7 @@ public:
     void parallelJoin(std::vector<PetriNet*> &pns);
 
     void rename(std::string);
-    void rename(int places, int transitions);
+    void rename(int, int, int, int);
 
     void findExits();
     void findEntrances();
@@ -133,11 +145,7 @@ public:
     bool canMakeStep(Transition* t, bool checkSync = false);
     void makeStep(Transition*, bool sync = false);
     void saveMarkup(std::vector<Place*> p);
-    void runNet();
-};
-
-class NestedPetriNet : public PetriNet {
-
+    void runNet(bool);
 };
 
 #endif

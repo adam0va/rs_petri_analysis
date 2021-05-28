@@ -10,8 +10,9 @@
 
 using namespace rapidjson;
 
-Server::Server(std::string name) {
+Server::Server(std::string &name, ServerTypes type) {
 	this->name = name;
+	this->type = type;
 }
 
 std::string Server::getName() {
@@ -63,16 +64,14 @@ std::string DataBase::getName() {
 	return this->name;
 }
 
-void DistributedSystem::addServer(std::string name) {
-	Server *newServer = new Server(name);
+void DistributedSystem::addServer(std::string name, ServerTypes type) {
+	Server *newServer = new Server(name, type);
 	this->servers.push_back(newServer);
-	return;
 }
 
 void DistributedSystem::addDataBase(std::string name) {
 	DataBase *newDB = new DataBase(name);
 	this->dataBases.push_back(newDB);
-	return;
 }
 
 PetriNet* DistributedSystem::getPnRepresentation() {
@@ -88,7 +87,7 @@ Server* DistributedSystem::findServerByName(std::string name) {
 		if (strcmp(name.c_str(), this->servers[i]->getName().c_str()) == 0)
 			return this->servers[i];
 	}
-	return NULL;
+	return nullptr;
 }   
 
 DataBase* DistributedSystem::findDbByName(std::string name) {
@@ -96,7 +95,7 @@ DataBase* DistributedSystem::findDbByName(std::string name) {
 		if (strcmp(name.c_str(),this->dataBases[i]->getName().c_str()) == 0)
 			return this->dataBases[i];
 	}
-	return NULL;
+	return nullptr;
 }
 
 void DistributedSystem::parseName(std::string name) {
@@ -106,7 +105,6 @@ void DistributedSystem::parseName(std::string name) {
 		else 
 			return;
 	}
-	return;
 }
 
 void DistributedSystem::getDescritpionFromFile(const char *filename) {
@@ -139,12 +137,29 @@ void DistributedSystem::getDescritpionFromFile(const char *filename) {
 
     assert(document.IsObject());
 
-    assert(document.HasMember("Servers"));
-    assert(document["Servers"].IsArray()); 
-    for (int i = 0; i < document["Servers"].Size(); i++) {
-		assert(document["Servers"][i].IsString());
-		this->addServer(document["Servers"][i].GetString());
-	}
+    if (document.HasMember("App_servers")) {
+        assert(document["App_servers"].IsArray());
+        for (int i = 0; i < document["App_servers"].Size(); i++) {
+            assert(document["App_servers"][i].IsString());
+            this->addServer(document["App_servers"][i].GetString(), APP_SERVER);
+        }
+    }
+
+    if (document.HasMember("Proxy_servers")) {
+        assert(document["Proxy_servers"].IsArray());
+        for (int i = 0; i < document["Proxy_servers"].Size(); i++) {
+            assert(document["Proxy_servers"][i].IsString());
+            this->addServer(document["Proxy_servers"][i].GetString(), PROXY_SERVER);
+        }
+    }
+
+    if (document.HasMember("Web_servers")) {
+        assert(document["Web_servers"].IsArray());
+        for (int i = 0; i < document["Web_servers"].Size(); i++) {
+            assert(document["Web_servers"][i].IsString());
+            this->addServer(document["Web_servers"][i].GetString(), WEB_SERVER);
+        }
+    }
 
 	assert(document.HasMember("Databases")); 
     assert(document["Databases"].IsArray()); 
@@ -228,34 +243,34 @@ void DistributedSystem::makeDotFile() {
 }
 
 bool DistributedSystem::visualize(std::string dotfilePath, std::string outputPath){
-    std::string command = "dot -Tpdf " + dotfilePath + " -o " + outputPath;
+    std::string command = "dot -Tpdf " + dotfilePath + " -O";
     system(command.c_str());
-    /*
-    GVC_t *gvc;
-    Agraph_t *g;
-    FILE *fp;
-    gvc = gvContext();
-    fp = fopen(this->dotFileName.c_str(), "r");
-    g = agread(fp, 0);
-    gvLayout(gvc, g, "dot");
-    gvRender(gvc, g, "png", fopen((this->name+".png").c_str(), "w"));
-    gvFreeLayout(gvc, g);
-    agclose(g);
-    return (gvFreeContext(gvc));*/
 }
 
 PetriNet* DistributedSystem::getPnDescription(Server *s) {
     PetriNet *pn = new PetriNet();
-    if (s->getServerConnections().empty() && s->getDbConnections().empty()) {
-        pn->getDescritpionFromFile("templates/pn/simple_server.json");
-        return pn;
-    }
-    if (s->getServerConnections().empty() && !s->getDbConnections().empty()) {
-        pn->getDescritpionFromFile("templates/pn/server_with_db.json");
-        return pn;
-    } else {
-        pn->getDescritpionFromFile("templates/pn/server_with_connections.json");
-        return pn;
+    if (s->type == APP_SERVER) {
+        if (s->getServerConnections().empty() && s->getDbConnections().empty()) {
+            pn->getDescritpionFromFile("templates/pn/simple_server.json");
+            return pn;
+        }
+        if (s->getServerConnections().empty() && !s->getDbConnections().empty()) {
+            pn->getDescritpionFromFile("templates/pn/server_with_db.json");
+            return pn;
+        } else
+        if (!s->getServerConnections().empty() && s->getDbConnections().empty()) {
+            pn->getDescritpionFromFile("templates/pn/server_with_conn_without_db.json");
+            return pn;
+        } else {
+            pn->getDescritpionFromFile("templates/pn/server_with_connections.json");
+            return pn;
+        }
+    } else
+    if (s->type == WEB_SERVER) {
+
+    } else
+    if (s->type == PROXY_SERVER) {
+
     }
 }
 
@@ -272,10 +287,14 @@ void DistributedSystem::makePnRepresentation() {
     }
     for (int i = 0; i < this->servers.size(); i++) {
         for (int j = 0; j < this->servers[i]->serverConnections.size(); j++) {
-                Transition *t = servers[i]->getPnRepresentation()->getOutToOtherServer();
+            Transition *t = servers[i]->getPnRepresentation()->getOutToOtherServer();
             Place *p = servers[i]->serverConnections[j]->getPnRepresentation()->getInFromOtherServer();
             firstPn->addArc(t, p, 1);
             // добавить метки
+            int lastHor = servers[i]->getPnRepresentation()->getLastHorSyncNumber();
+            servers[i]->getPnRepresentation()->getSyncFromOtherServerOut()->setHorSync(lastHor);
+            servers[i]->serverConnections[j]->getPnRepresentation()->getSyncFromOtherServerIn()->setHorSync(lastHor);
+
         }
     }
     this->petriNetRepresentation = firstPn;

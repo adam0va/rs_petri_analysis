@@ -59,6 +59,24 @@ void Transition::changeName(std::string s) {
     this->name.insert(1, s);
 }
 
+void Transition::setHorSync(std::string l) {
+    horSyncLabel = l;
+}
+
+void Transition::setHorSync(int l) {
+    horSyncLabel.push_back('l');
+    horSyncLabel += std::to_string(l);
+}
+
+void Transition::setVertSync(std::string l) {
+    vertSyncLabel = l;
+}
+
+void Transition::setVertSync(int l) {
+    vertSyncLabel.push_back('l');
+    vertSyncLabel += std::to_string(l);
+}
+
 void Arc::printArc() {
 	printf("%s --%d--> %s\n", from->name.c_str(), mark, to->name.c_str());
 }
@@ -71,6 +89,8 @@ PetriNet::PetriNet() {
 	std::string name = "";
     lastTransitionNumber = 0;
     lastPlaceNumber = 0;
+    lastHorSyncNumber = 0;
+    lastVertSyncNumber = 0;
     inFromOtherServer = NULL;
     outToOtherServer = NULL;
     syncFromOtherServerIn = NULL;
@@ -105,12 +125,29 @@ Transition *PetriNet::getSyncFromOtherServerIn() {
     return this->syncFromOtherServerIn;
 }
 
+int PetriNet::getLastHorSyncNumber() {
+    return lastHorSyncNumber;
+}
+
+int PetriNet::getLastVertSyncNumber() {
+    return lastVertSyncNumber;
+}
+
+void PetriNet::setLastHorSyncNumber(int n) {
+    lastHorSyncNumber = n;
+}
+
+void PetriNet::setLastVertSyncNumber(int n) {
+    lastVertSyncNumber = n;
+}
+
+
 Place* PetriNet::addPlace(std::string name, int mark) { // добавить проверку правильности написания имени
 	Place *newPlace = new Place();
 	if (newPlace->checkName(name))
 	    newPlace->name = name;
 	else
-        return NULL;
+        return nullptr;
 	newPlace->tokens = mark;
 	places.push_back(newPlace);
 	lastPlaceNumber++;
@@ -143,7 +180,15 @@ Transition* PetriNet::addTransition(std::string name, std::string horLabel, std:
 	if (newTransition->checkName(name))
         newTransition->name = name;
 	else
-        return NULL;
+        return nullptr;
+	if (!horLabel.empty()) {
+	    newTransition->horSyncLabel = horLabel;
+	    lastHorSyncNumber++;
+	}
+	if (!vertLabel.empty()) {
+	    newTransition->vertSyncLabel = vertLabel;
+	    lastVertSyncNumber++;
+	}
 	transitions.push_back(newTransition);
 	lastTransitionNumber++;
 	return newTransition;
@@ -153,7 +198,6 @@ Transition* PetriNet::addNextTransition() {
     Transition *newTransition = new Transition();
     newTransition->name = "t" + std::to_string(++lastTransitionNumber);
     transitions.push_back(newTransition);
-    lastTransitionNumber++;
     return newTransition;
 }
 
@@ -297,7 +341,7 @@ std::string PetriNet::makeDotFile(std::string fn, bool isSubgraph) {
         std::string file;
 		if (!places[i]->netTokensNumber.empty()) {
 		    for (int j = 0; j < places[i]->netTokensNumber.size(); j++) {
-		        file = this->netTokens[places[i]->netTokensNumber[j]]->makeDotFile("", true);
+		        file = this->netTokens[places[i]->netTokensNumber[j]]->makeDotFile("sub", true);
 		        filenames.push_back(file);
 		    }
 		}
@@ -337,7 +381,7 @@ std::string PetriNet::makeDotFile(std::string fn, bool isSubgraph) {
         }
         out << ";\n";
 	}
-    out << "overlap=false\nfontsize=12;\n}";
+    out << "overlap=scale\nfontsize=14;\n}";
     out.close();
     return this->dotFileName;
 }
@@ -347,7 +391,7 @@ std::string PetriNet::getDotFileName() {
 }
 
 bool PetriNet::visualize() {
-    std::string command = "dot -Tpdf " + this->dotFileName + " -o " + "outputPath.pdf";
+    std::string command = "dot -Tpdf " + this->dotFileName + " -O";
     system(command.c_str());
     return false;
 }
@@ -442,7 +486,6 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
                 en->getDescritpionFromFile(filename.c_str());
                 //this->netTokens.push_back(en);
                 this->addPlace(std::string(itr->name.GetString()), en);
-                printf("number of EN %lu\n", netTokens.size());
     		}
     	}
     } else 
@@ -527,15 +570,11 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
 	            std::string(document["OutToOtherServer"].GetString()));
 	    this->outToOtherServer = t;
 
-	    printf("Out to:");
-	    outToOtherServer->printTransition();
 	}
     if (document.HasMember("InFromOtherServer")) {
         Place* p = this->findPlaceByName(
                 std::string(document["InFromOtherServer"].GetString()));
         this->inFromOtherServer = p;
-        printf("In from:");
-        inFromOtherServer->printPlace();
     }
     if (document.HasMember("SyncWithOtherServerOut")) {
         Transition* t = this->findTransitionByName(
@@ -556,19 +595,19 @@ void PetriNet::getDescritpionFromFile(const char *filename) {
     findExits();
 
     for (int i = 0; i < this->netTokens.size(); i++) {
-        netTokens[i]->rename(lastPlaceNumber, lastTransitionNumber);
+        netTokens[i]->rename(lastPlaceNumber, lastTransitionNumber, lastHorSyncNumber, lastVertSyncNumber);
         lastTransitionNumber = netTokens[i]->lastTransitionNumber;
         lastPlaceNumber = netTokens[i]->lastPlaceNumber;
     }
 
-    printf("entrances: ");
+    /*printf("entrances: ");
     for (int i = 0; i < entrances.size(); i++) {
         printf("%s ", entrances[i]->getName().c_str());
     }
     printf("\nexits: ");
     for (int i = 0; i < exits.size(); i++) {
         printf("%s ", exits[i]->getName().c_str());
-    }
+    }*/
 }
 
 void PetriNet::seriesJoin(PetriNet* &pn) {
@@ -576,9 +615,11 @@ void PetriNet::seriesJoin(PetriNet* &pn) {
 
     addArc(this->exits[0], newPlace, 1);
 
-    pn->rename(lastPlaceNumber, lastTransitionNumber);
+    pn->rename(lastPlaceNumber, lastTransitionNumber, lastHorSyncNumber, lastVertSyncNumber);
     lastPlaceNumber += pn->lastPlaceNumber;
     lastTransitionNumber += pn->lastTransitionNumber;
+    lastVertSyncNumber += pn->lastVertSyncNumber;
+    lastHorSyncNumber += pn->lastHorSyncNumber;
 
     addArc(newPlace, pn->entrances[0], 1);
     this->places.insert(this->places.end(), pn->places.begin(), pn->places.end());
@@ -595,9 +636,11 @@ void PetriNet::parallelJoin(PetriNet* &pn) {
     Place *newPlace1 = addNextPlace();
     Transition *newTransition1 = addNextTransition();
 
-    pn->rename(lastPlaceNumber, lastTransitionNumber);
+    pn->rename(lastPlaceNumber, lastTransitionNumber, lastHorSyncNumber, lastVertSyncNumber);
     lastPlaceNumber += pn->lastPlaceNumber;
     lastTransitionNumber += pn->lastTransitionNumber;
+    lastVertSyncNumber += pn->lastVertSyncNumber;
+    lastHorSyncNumber += pn->lastHorSyncNumber;
 
     addArc(newTransition1, newPlace1, 1);
     addArc(newPlace1, entrances[0], 1);
@@ -615,20 +658,23 @@ void PetriNet::parallelJoin(PetriNet* &pn) {
 
 void PetriNet::parallelJoin(std::vector<PetriNet*> &pns) {
     Place *newPlace1 = addNextPlace();
-    Transition *newTransition1 = addNextTransition();
+    //Transition *newTransition1 = addNextTransition();
 
     for (int i = 0; i < pns.size(); i++) {
-        pns[i]->rename(lastPlaceNumber, lastTransitionNumber);
+        pns[i]->rename(lastPlaceNumber, lastTransitionNumber, lastHorSyncNumber, lastVertSyncNumber);
         lastPlaceNumber += pns[i]->lastPlaceNumber;
         lastTransitionNumber += pns[i]->lastTransitionNumber;
+        lastVertSyncNumber += pns[i]->lastVertSyncNumber;
+        lastHorSyncNumber += pns[i]->lastHorSyncNumber;
         addArc(newPlace1, pns[i]->entrances[0], 1);
         this->places.insert(this->places.end(), pns[i]->places.begin(), pns[i]->places.end());
         this->transitions.insert(this->transitions.end(), pns[i]->transitions.begin(), pns[i]->transitions.end());
         this->arcs.insert(this->arcs.end(), pns[i]->arcs.begin(), pns[i]->arcs.end());
     }
 
-    addArc(newTransition1, newPlace1, 1);
+    //addArc(newTransition1, newPlace1, 1);
     addArc(newPlace1, entrances[0], 1);
+    newPlace1->tokens = 3;
 
     findExits();
     findEntrances();
@@ -645,7 +691,7 @@ void PetriNet::rename(std::string n) {
     }
 }
 
-void PetriNet::rename(int placesN, int transitionsN) {
+void PetriNet::rename(int placesN, int transitionsN, int horN, int vertN) {
     for (int i = 0; i < this->places.size(); i++) {
         std::string number = this->places[i]->name.substr(1, this->places[i]->name.length() - 1);
         int n = stoi(number) + placesN;
@@ -655,12 +701,24 @@ void PetriNet::rename(int placesN, int transitionsN) {
         std::string number = this->transitions[i]->name.substr(1, this->transitions[i]->name.length() - 1);
         int n = stoi(number) + transitionsN;
         this->transitions[i]->setName("t" + std::to_string(n));
+
+        if (!this->transitions[i]->horSyncLabel.empty()) {
+            number = this->transitions[i]->horSyncLabel.substr(1, this->transitions[i]->horSyncLabel.length() - 1);
+            n = stoi(number) + horN;
+            this->transitions[i]->vertSyncLabel = "h" + std::to_string(n);
+        }
+
+        if (!this->transitions[i]->vertSyncLabel.empty()){
+            number = this->transitions[i]->vertSyncLabel.substr(1, this->transitions[i]->vertSyncLabel.length() - 1);
+            n = stoi(number) + vertN;
+            this->transitions[i]->vertSyncLabel = "v" + std::to_string(n);
+        }
     }
-    printf("rename: \n");
+    /*printf("rename: \n");
     if (this->inFromOtherServer)
         this->inFromOtherServer->printPlace();
     if (this->outToOtherServer)
-        this->outToOtherServer->printTransition();
+        this->outToOtherServer->printTransition();*/
 }
 
 bool PetriNet::checkTransitionWithSynchronization(Transition* t) {
@@ -698,10 +756,8 @@ Transition* PetriNet::canMakeStep(bool checkSync) {
     if (possibleTransitions.empty()) {
         return NULL;
     } else {
-        printf("size: %lu\n", possibleTransitions.size());
         srand( time( 0 ) );
         int idx = rand() % possibleTransitions.size(); // возвращаем случайную дугу
-        printf("%d\n", idx);
         return possibleTransitions[idx];
     }
 }
@@ -747,8 +803,23 @@ void PetriNet::saveMarkup(std::vector<Place*> p) {
 
 }
 
-void PetriNet::runNet() {
-
+void PetriNet::runNet(bool printTrans) {
+    int i = 0;
+    while (Transition *t = canMakeStep(true)) {
+        makeStep(t, true);
+        transitionWorkCounter[t]++;
+        if (printTrans)
+            t->printTransition();
+        //makeDotFile(std::to_string(i));
+        //visualize();
+        i++;
+    }
+    printf("Deadlock!");
+    for (auto itr = transitionWorkCounter.begin(); itr != transitionWorkCounter.end(); itr++) {
+        printf("%s    %d\n", itr->first->getName().c_str(), itr->second);
+    }
+    makeDotFile(std::to_string(i));
+    visualize();
 }
 
 
